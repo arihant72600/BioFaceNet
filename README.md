@@ -20,4 +20,4 @@ and placed in the data_creation folder. Then the python notebook in data_creatio
 A pretrained model can be downloaded form here:
 https://drive.google.com/drive/folders/1-4SxpdDGHw6gNng1rWBDEknBv7F7Tarp?usp=sharing
 
-model_v3.pth has was trained with a higher specularity loss, whereas model.pth was trained with a lower specularity loss.
+model_v3.pth has was trained with a higher specularity loss, whereas model.pth was trained with a lower specularity loss. These should be put in folder called "working".
