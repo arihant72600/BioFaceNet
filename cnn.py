@@ -651,23 +651,23 @@ for epoch in range(num_epochs):
         plt.imshow(rgb)
         fig.savefig(f'training/epoch-{epochString}-reconstruction.png')
 
-        plt.figure()
+        fig = plt.figure()
         plt.imshow(originalImage)
         fig.savefig(f'training/epoch-{epochString}-original.png')
 
-        plt.figure()
+        fig = plt.figure()
         plt.imshow(shade[0].to('cpu'), cmap='gray')
         fig.savefig(f'training/epoch-{epochString}-shading.png')
 
-        plt.figure()
+        fig = plt.figure()
         plt.imshow(spec)
         fig.savefig(f'training/epoch-{epochString}-specular.png')
 
-        plt.figure()
+        fig = plt.figure()
         plt.imshow(blood[0][0].to('cpu'), cmap='gray')
         fig.savefig(f'training/epoch-{epochString}-blood.png')
 
-        plt.figure()
+        fig = plt.figure()
         plt.imshow(mel[0][0].to('cpu'), cmap='gray')
         fig.savefig(f'training/epoch-{epochString}-melanin.png')
 
