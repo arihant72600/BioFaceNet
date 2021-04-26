@@ -1,10 +1,4 @@
 
-"""
-
-# BioFaceNet
-
-Here we implement the CNN for parsing images into specularity, shading, melanin levels, haemoglobin levels, and lighting estimation. This is done with an encoder CNN that estimates the features, and a decoder that reconstructs the image based on the features.
-"""
 
 from random import randint
 import time
@@ -18,6 +12,7 @@ import matplotlib.pyplot as plt
 import torch
 from torch.utils.data import Dataset, DataLoader, TensorDataset, random_split
 import scipy.io as sio
+
 import argparse
 
 parser = argparse.ArgumentParser()
@@ -26,10 +21,16 @@ parser.add_argument("--cuda", help="Use cuda for acceleration",
                     action="store_true")
 args = parser.parse_args()
 
-if args.weights is not None:
-    SAVED_WEIGHTS = args.weights
-
+SAVED_WEIGHTS = args.weights
 device = 'cuda' if args.cuda else 'cpu'
+
+
+"""
+
+# BioFaceNet
+
+Here we implement the CNN for parsing images into specularity, shading, melanin levels, haemoglobin levels, and lighting estimation. This is done with an encoder CNN that estimates the features, and a decoder that reconstructs the image based on the features.
+"""
 
 
 """## Input
@@ -43,9 +44,7 @@ There are several improvements to be made here. First, the data that is being us
 Another problem was that the [Neural Face Editing](https://github.com/zhixinshu/NeuralFaceEditing) splits shading into $3$ channels whereas our model uses a single channel shading feature. It is unknown what the original BioFaceNet author does here. I simply averaged the 3 channels to get a single channel, however there may be a better approach. The shading in this model is used as multiplier with the diffuse reflectance. This represents the raw value of the image which is put through a series of transformations to get the rgb image. However, in [Neural Face Editing](https://github.com/zhixinshu/NeuralFaceEditing) the shading is a multiplier on the final image in rgb space. Therefore, we may get better results if we take the three channel shading and invert the transformations and then take the average to get the one channel shading.
 """
 
-print("Loading Data")
-
-images = h5py.File('data/lin_image_shading_mask_all_1.hdf5', 'r')['default']
+# images = h5py.File('data/lin_image_shading_mask_all_1.hdf5', 'r')['default']
 
 
 def gammaCorrection(x):
@@ -60,56 +59,6 @@ meanPixel = np.array([0.35064762, 0.21667774, 0.16786481])
 
 idx = 0
 
-# images has shape (N, 5, 64, 64)
-# N data points. Each with rgb data in linear space, shading, and mask
-
-# x = images[idx][0:3]
-# x[0] += meanPixel[0]
-# x[1] += meanPixel[1]
-# x[2] += meanPixel[2]
-# y = images[idx][3]
-# z = images[idx][4]
-# npx = gammaCorrection(np.array(x))
-# npy = np.array(y)  # could fix shading
-# npz = np.array(z)
-# npx = np.transpose(npx, (1, 2, 0))
-# plt.figure()
-# plt.imshow(npx)
-# plt.figure()
-# plt.imshow(npy, cmap='gray')
-# plt.figure()
-# plt.imshow(npz, cmap='gray')
-
-datanp = np.array(images)
-
-print('Finished loading data')
-
-
-traindata_proportion = 0.9
-
-data_tensor = torch.from_numpy(datanp).to(device)
-init_dataset = TensorDataset(data_tensor)
-lengths = [int(len(init_dataset)*traindata_proportion), len(init_dataset) -
-           int(len(init_dataset)*traindata_proportion), ]
-subset_train, subset_val = random_split(init_dataset, lengths)
-
-dataloaders = {
-    'train': torch.utils.data.DataLoader(subset_train, batch_size=32, shuffle=True, num_workers=0),
-    'val': torch.utils.data.DataLoader(subset_val, batch_size=8, shuffle=False, num_workers=0)
-}
-
-"""The illumination data that is used for this model is published by the BioFace net author. I use the data but we also have some sanity checks here so I can understand what the data is and where it comes from. The data is used to restrict what the model can choose to be the lighting. It must pick a linear combination of A, D, and F illuminants. Then the model computes the spectral power distrubtion from 400nm to 720nm in increments of 10nm.
-
-The equation for A illuminant comes from [Wikipedia](https://en.wikipedia.org/wiki/Standard_illuminant#cite_note-schanda-1). We can check this matches very closely to the data provided.
-
-The D illuminant has an a temperature parameter. In the Matlab implementation they precalculate the values for each temperature from 4000 to 25000 in increments of 1000 and interpolate during inference. Since the equations for the illuminant is fully describable I implement a function that returns the power distrubtion that is differentiable on the temperature. We use the equations from [here](http://www.brucelindbloom.com/index.html?Eqn_DIlluminant.html).
-
-The F illuminant data is precalculated [here](http://www.rit-mcsl.org/UsefulData/Fluorescents.htm) and this matches with the data provided.
-
-Further improvements include possibly adding more illuminant types. Also, if we could find a probability distrubution on illuminants we could bias the model into picking power distrubtions that are more likely to be found. 
-
-
-"""
 
 illAProvided = sio.loadmat("util/illumA.mat")
 illAProvided = illAProvided['illumA'][0][0]
@@ -117,16 +66,6 @@ illAProvided = illAProvided['illumA'][0][0]
 illA = np.copy(illAProvided)
 illA = illA / illA.sum()
 illA = torch.tensor(illA).to(device)
-
-
-largestDifference = 0
-
-for i, wavelength in enumerate(range(400, 721, 10)):
-    frac = (e ** (1.435 * (10 ** 7) / (2848 * 560)) - 1) / \
-        (e ** (1.435 * (10 ** 7) / (2848 * wavelength)) - 1)
-
-    r = 100 * (560 / wavelength) ** 5 * frac
-    largestDifference = max(largestDifference, (illAProvided[i] - r) ** 2)
 
 
 s0 = torch.Tensor([94.80, 104.80, 105.90, 96.80, 113.90, 125.60, 125.50, 121.30, 121.30,
@@ -173,15 +112,6 @@ def illuminanceD(temp):
 
 # Sanity Check for D
 
-
-illDData = sio.loadmat('util/illumDmeasured.mat')['illumDmeasured']
-providedData = illDData / np.sum(illDData, 1).reshape(22, 1)
-providedData = torch.tensor(providedData).to(device)
-
-temps = np.reshape(np.arange(22) / 22, ((22, 1)))
-generatedData = illuminanceD(torch.tensor(temps).to(device))
-
-# print(torch.max((providedData - generatedData) ** 2))
 
 illF = torch.Tensor(sio.loadmat('util/illF')['illF']).to(device)[0]
 
@@ -230,11 +160,11 @@ pcaComponents[1] *= -1  # Done so that vector is on the same scale as matlab
 # print(pca.singular_values_)
 # print(pca.mean_)
 
-fig = plt.figure()
-plt.plot(pca.mean_)
-plt.plot(pcaComponents[0])
-plt.plot(pcaComponents[1])
-fig.savefig("charts/Camera Sensitivity.png")
+# fig = plt.figure()
+# plt.plot(pca.mean_)
+# plt.plot(pcaComponents[0])
+# plt.plot(pcaComponents[1])
+# fig.savefig("charts/Camera Sensitivity.png")
 
 pcaMeans = torch.reshape(torch.tensor(pca.mean_), (1, 99)).float().to(device)
 pcaComponents = torch.tensor(pcaComponents).permute(1, 0).float().to(device)
@@ -261,10 +191,10 @@ skinTest = sio.loadmat('util/Newskincolour.mat')['Newskincolour']
 
 pic = skinTest @ csTest.T
 
-pic = gammaCorrection(pic.reshape((256, 256, 3)))
-fig = plt.figure()
-plt.imshow(pic)
-fig.savefig("charts/Skin Color.png")
+# pic = gammaCorrection(pic.reshape((256, 256, 3)))
+# fig = plt.figure()
+# plt.imshow(pic)
+# fig.savefig("charts/Skin Color.png")
 
 """## Color space transformations
 
@@ -547,159 +477,40 @@ print('Finished setting up model')
 
 
 model = Unet().to(device)
+model.load_state_dict(torch.load('working/model.pth'))
 
-if SAVED_WEIGHTS is not None:
-    model.load_state_dict(torch.load(SAVED_WEIGHTS))
-
-smallestLoss = 1e9
-
-num_epochs = 100
-
-optimizer = torch.optim.Adam(model.parameters(), lr=1e-5, weight_decay=0)
-
-for epoch in range(num_epochs):
-    print('Epoch {}/{}'.format(epoch, num_epochs - 1))
-    print('-' * 10)
-    logs = {}
-
-    # let every epoch go through one training cycle and one validation cycle
-    # TRAINING AND THEN VALIDATION LOOP...
-    for phase in ['train', 'val']:
-        train_loss = 0
-        prior_train_loss = 0
-        appearance_train_loss = 0
-        shading_train_loss = 0
-        prior_train_loss = 0
-        sparcity_train_loss = 0
-
-        total = 0
-        batch_idx = 0
-
-        start_time = time.time()
-
-        if phase == 'train':
-            for param_group in optimizer.param_groups:
-                print("LR", param_group['lr'])  # print out the learning rate
-            model.train()  # Set model to training mode
-        else:
-            model.eval()   # Set model to evaluate mode
-
-        for inputs in dataloaders[phase]:
-            inputs = inputs[0]
-            inputs = inputs.to(device)
-            batch_idx += 1
-
-            optimizer.zero_grad()
-
-            with torch.set_grad_enabled(phase == 'train'):
-                loss, priorLoss, appearanceLoss, shadingLoss, sparcityLoss, * \
-                    maps = model(inputs)
-
-                if phase == 'train':
-                    loss.backward()
-                    optimizer.step()
-
-                train_loss += loss
-                appearance_train_loss += appearanceLoss
-                shading_train_loss += shadingLoss
-                prior_train_loss += priorLoss
-                sparcity_train_loss += sparcityLoss
-
-        prefix = ''
-        if phase == 'val':
-            prefix = 'val_'
-            if (train_loss.item()) < smallestLoss:
-                torch.save(model.state_dict(), 'working/model.pth')
-                smallestLoss = train_loss.item()
-
-        logs[prefix + 'loss'] = train_loss.item()/(batch_idx)
-        logs[prefix + 'appearance loss'] = appearance_train_loss.item() / \
-            (batch_idx)
-        logs[prefix + 'shading loss'] = shading_train_loss.item()/(batch_idx)
-        logs[prefix + 'prior loss'] = prior_train_loss.item()/(batch_idx)
-        logs[prefix + 'sparcity loss'] = sparcity_train_loss.item()/(batch_idx)
+# Read from folder
+for inputs in dataloaders['val']:
+    inputs = inputs[0]
+    inputs = inputs.to(device)
 
     with torch.set_grad_enabled(False):
-        model.eval()
-        randIndex = randint(0, len(subset_val) - 1)
+        outputs = model(inputs)
 
-        inputData = torch.reshape(subset_val[randIndex][0], (1, 5, 64, 64))
+        images = outputs[5].to('cpu')
 
-        *losses, rgb, shade, spec, mel, blood = model(inputData)
-        originalImage = torch.clone(inputData[0, :3, :, :]).to('cpu')
-        originalImage[0] += 0.35064762
-        originalImage[1] += 0.21667774
-        originalImage[2] += 0.16786481
+        originalImage = torch.clone(inputs[:, :3, :, :]).to('cpu')
+        originalImage[:, 0, :, :] += 0.35064762
+        originalImage[:, 1, :, :] += 0.21667774
+        originalImage[:, 2, :, :] += 0.16786481
 
-        rgb = gammaCorrection(rgb[0]).to('cpu')
-        originalImage = gammaCorrection(originalImage)
+        for image, truth in zip(images, originalImage):
+            image = gammaCorrection(image)
+            truth = gammaCorrection(truth)
 
-        rgb = np.array(rgb)
-        rgb = np.transpose(rgb, (1, 2, 0))
+            npimage = np.array(image)
+            npimage = np.transpose(npimage, (1, 2, 0))
 
-        originalImage = np.array(originalImage)
-        originalImage = np.transpose(originalImage, (1, 2, 0))
+            nptruth = np.array(truth)
+            nptruth = np.transpose(nptruth, (1, 2, 0))
 
-        spec = np.array(spec[0].to('cpu'))
-        spec = np.transpose(spec, (1, 2, 0))
+            plt.figure()
+            plt.imshow(npimage)
 
-        print('saving figures')
+            plt.figure()
+            plt.imshow(nptruth)
 
-        fig = plt.figure()
-        plt.imshow(rgb)
-        fig.savefig(f'training/epoch-{epoch}-reconstruction.png')
-
-        plt.figure()
-        plt.imshow(originalImage)
-        fig.savefig(f'training/epoch-{epoch}-original.png')
-
-        plt.figure()
-        plt.imshow(shade[0].to('cpu'), cmap='gray')
-        fig.savefig(f'training/epoch-{epoch}-shading.png')
-
-        plt.figure()
-        plt.imshow(spec)
-        fig.savefig(f'training/epoch-{epoch}-specular.png')
-
-        plt.figure()
-        plt.imshow(blood[0][0].to('cpu'), cmap='gray')
-        fig.savefig(f'training/epoch-{epoch}-blood.png')
-
-        plt.figure()
-        plt.imshow(mel[0][0].to('cpu'), cmap='gray')
-        fig.savefig(f'training/epoch-{epoch}-melanin.png')
-
-# for inputs in dataloaders['val']:
-#     inputs = inputs[0]
-#     inputs = inputs.to(device)
-
-#     with torch.set_grad_enabled(False):
-#         outputs = model(inputs)
-
-#         images = outputs[5].to('cpu')
-
-#         originalImage = torch.clone(inputs[:, :3, :, :]).to('cpu')
-#         originalImage[:, 0, :, :] += 0.35064762
-#         originalImage[:, 1, :, :] += 0.21667774
-#         originalImage[:, 2, :, :] += 0.16786481
-
-#         for image, truth in zip(images, originalImage):
-#             image = gammaCorrection(image)
-#             truth = gammaCorrection(truth)
-
-#             npimage = np.array(image)
-#             npimage = np.transpose(npimage, (1, 2, 0))
-
-#             nptruth = np.array(truth)
-#             nptruth = np.transpose(nptruth, (1, 2, 0))
-
-#             plt.figure()
-#             plt.imshow(npimage)
-
-#             plt.figure()
-#             plt.imshow(nptruth)
-
-#     break
+    break
 
 totalParams = 0
 
