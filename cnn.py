@@ -26,8 +26,8 @@ parser.add_argument("--cuda", help="Use cuda for acceleration",
                     action="store_true")
 args = parser.parse_args()
 
-if args.weights is not None:
-    SAVED_WEIGHTS = args.weights
+SAVED_WEIGHTS = args.weights
+
 
 device = 'cuda' if args.cuda else 'cpu'
 
