@@ -6,7 +6,6 @@ import torch.nn.functional as F
 import torch.nn as nn
 from sklearn.decomposition import PCA
 from math import e
-import h5py
 import numpy as np
 import matplotlib.pyplot as plt
 import torch
