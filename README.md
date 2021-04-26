@@ -25,8 +25,42 @@ model_v3.pth has was trained with a higher specularity loss, whereas model.pth w
 ## Usage
 
 python3 train.py [--weights path/to/model/weights] [--cuda]
-python3 test.py weights path/to/image_folder [--cuda]
+python3 test.py path/to/model/weights path/to/images.hdf5 [--cuda]
 
 ## Detailed Analysis Improvements
 
 This is all in CNN.ipynb file.
+
+
+## Results
+Here is an example of the network on an example image from the validation set
+
+
+Original
+
+![original](example-imgs/original.png)
+
+
+Reconstruction
+
+![prediction](example-imgs/prediction.png)
+
+
+Shading
+
+![prediction](example-imgs/shading.png)
+
+
+Specular
+
+![prediction](example-imgs/specularities.png)
+
+
+Blood
+
+![prediction](example-imgs/blood.png)
+
+
+Melanin
+
+![prediction](example-imgs/melanin.png)
