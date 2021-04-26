@@ -608,9 +608,9 @@ for epoch in range(num_epochs):
         prefix = ''
         if phase == 'val':
             prefix = 'val_'
-            if (train_loss.item()) < smallestLoss:
+            if (loss.item()) < smallestLoss:
                 torch.save(model.state_dict(), 'working/model.pth')
-                smallestLoss = train_loss.item()
+                smallestLoss = loss.item()
 
         logs[prefix + 'loss'] = train_loss.item()/(batch_idx)
         logs[prefix + 'appearance loss'] = appearance_train_loss.item() / \
@@ -645,17 +645,19 @@ for epoch in range(num_epochs):
 
         print('saving figures')
 
+        epochString = str(epoch).zfill(3)
+
         fig = plt.figure()
         plt.imshow(rgb)
-        fig.savefig(f'training/epoch-{epoch}-reconstruction.png')
+        fig.savefig(f'training/epoch-{epochString}-reconstruction.png')
 
         plt.figure()
         plt.imshow(originalImage)
-        fig.savefig(f'training/epoch-{epoch}-original.png')
+        fig.savefig(f'training/epoch-{epochString}-original.png')
 
         plt.figure()
         plt.imshow(shade[0].to('cpu'), cmap='gray')
-        fig.savefig(f'training/epoch-{epoch}-shading.png')
+        fig.savefig(f'training/epoch-{epochString}-shading.png')
 
         plt.figure()
         plt.imshow(spec)
@@ -663,11 +665,11 @@ for epoch in range(num_epochs):
 
         plt.figure()
         plt.imshow(blood[0][0].to('cpu'), cmap='gray')
-        fig.savefig(f'training/epoch-{epoch}-blood.png')
+        fig.savefig(f'training/epoch-{epochString}-blood.png')
 
         plt.figure()
         plt.imshow(mel[0][0].to('cpu'), cmap='gray')
-        fig.savefig(f'training/epoch-{epoch}-melanin.png')
+        fig.savefig(f'training/epoch-{epochString}-melanin.png')
 
 # for inputs in dataloaders['val']:
 #     inputs = inputs[0]

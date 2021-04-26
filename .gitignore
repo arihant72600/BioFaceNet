@@ -129,3 +129,4 @@ dmypy.json
 .pyre/
 
 *.hdf5
+*.pth
