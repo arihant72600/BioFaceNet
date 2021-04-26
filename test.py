@@ -529,27 +529,27 @@ for inputs in dataloaders['val']:
 
             fig = plt.figure()
             plt.imshow(npimage)
-            fig.save(f"results/{str(index).zfill(6)}-reconstruction.png")
+            fig.savefig(f"results/{str(index).zfill(6)}-reconstruction.png")
 
             fig = plt.figure()
             plt.imshow(nptruth)
-            fig.save(f"results/{str(index).zfill(6)}-original.png")
+            fig.savefig(f"results/{str(index).zfill(6)}-original.png")
 
             fig = plt.figure()
             plt.imshow(shade, cmap='gray')
-            fig.save(f"results/{str(index).zfill(6)}-shading.png")
+            fig.savefig(f"results/{str(index).zfill(6)}-shading.png")
 
             fig = plt.figure()
             plt.imshow(spec)
-            fig.save(f"results/{str(index).zfill(6)}-specularities.png")
+            fig.savefig(f"results/{str(index).zfill(6)}-specularities.png")
 
             fig = plt.figure()
-            plt.imshow(blood.to('cpu'))
-            fig.save(f"results/{str(index).zfill(6)}-blood.png")
+            plt.imshow(blood[0].to('cpu'))
+            fig.savefig(f"results/{str(index).zfill(6)}-blood.png")
 
             fig = plt.figure()
-            plt.imshow(mel.to('cpu'))
-            fig.save(f"results/{str(index).zfill(6)}-melanin.png")
+            plt.imshow(mel[0].to('cpu'))
+            fig.savefig(f"results/{str(index).zfill(6)}-melanin.png")
 
             index += 1
 
