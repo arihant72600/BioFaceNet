@@ -6,6 +6,7 @@ import torch.nn.functional as F
 import torch.nn as nn
 from sklearn.decomposition import PCA
 from math import e
+import h5py
 import numpy as np
 import matplotlib.pyplot as plt
 import torch
@@ -15,7 +16,8 @@ import scipy.io as sio
 import argparse
 
 parser = argparse.ArgumentParser()
-parser.add_argument("--weights", help="Path to weights")
+parser.add_argument("weights", help="Path to weights")
+parser.add_argument("inputFile", help="Path to hdf5 file")
 parser.add_argument("--cuda", help="Use cuda for acceleration",
                     action="store_true")
 args = parser.parse_args()
@@ -43,7 +45,19 @@ There are several improvements to be made here. First, the data that is being us
 Another problem was that the [Neural Face Editing](https://github.com/zhixinshu/NeuralFaceEditing) splits shading into $3$ channels whereas our model uses a single channel shading feature. It is unknown what the original BioFaceNet author does here. I simply averaged the 3 channels to get a single channel, however there may be a better approach. The shading in this model is used as multiplier with the diffuse reflectance. This represents the raw value of the image which is put through a series of transformations to get the rgb image. However, in [Neural Face Editing](https://github.com/zhixinshu/NeuralFaceEditing) the shading is a multiplier on the final image in rgb space. Therefore, we may get better results if we take the three channel shading and invert the transformations and then take the average to get the one channel shading.
 """
 
-# images = h5py.File('data/lin_image_shading_mask_all_1.hdf5', 'r')['default']
+images = h5py.File(args.inputFile, 'r')['default']
+
+datanp = np.array(images)
+
+print('Finished loading data')
+
+
+data_tensor = torch.from_numpy(datanp).to(device)
+init_dataset = TensorDataset(data_tensor)
+
+dataloaders = {
+    'val': torch.utils.data.DataLoader(init_dataset, batch_size=32, shuffle=False, num_workers=0)
+}
 
 
 def gammaCorrection(x):
@@ -476,9 +490,11 @@ print('Finished setting up model')
 
 
 model = Unet().to(device)
-model.load_state_dict(torch.load('working/model.pth'))
+model.load_state_dict(torch.load(SAVED_WEIGHTS))
 
-# Read from folder
+index = 0
+
+# Read from input file
 for inputs in dataloaders['val']:
     inputs = inputs[0]
     inputs = inputs.to(device)
@@ -493,7 +509,12 @@ for inputs in dataloaders['val']:
         originalImage[:, 1, :, :] += 0.21667774
         originalImage[:, 2, :, :] += 0.16786481
 
-        for image, truth in zip(images, originalImage):
+        shades = outputs[6].to('cpu')
+        specs = outputs[7].to('cpu')
+        mels = outputs[8].to('cpu')
+        bloods = outputs[9].to('cpu')
+
+        for image, truth, shade, spec, mel, blood in zip(images, originalImage, shades, specs, mels, bloods):
             image = gammaCorrection(image)
             truth = gammaCorrection(truth)
 
@@ -503,13 +524,35 @@ for inputs in dataloaders['val']:
             nptruth = np.array(truth)
             nptruth = np.transpose(nptruth, (1, 2, 0))
 
-            plt.figure()
+            spec = np.array(spec)
+            spec = np.transpose(spec, (1, 2, 0))
+
+            fig = plt.figure()
             plt.imshow(npimage)
+            fig.save(f"results/{str(index).zfill(6)}-reconstruction.png")
 
-            plt.figure()
+            fig = plt.figure()
             plt.imshow(nptruth)
+            fig.save(f"results/{str(index).zfill(6)}-original.png")
 
-    break
+            fig = plt.figure()
+            plt.imshow(shade, cmap='gray')
+            fig.save(f"results/{str(index).zfill(6)}-shading.png")
+
+            fig = plt.figure()
+            plt.imshow(spec)
+            fig.save(f"results/{str(index).zfill(6)}-specularities.png")
+
+            fig = plt.figure()
+            plt.imshow(blood.to('cpu'))
+            fig.save(f"results/{str(index).zfill(6)}-blood.png")
+
+            fig = plt.figure()
+            plt.imshow(mel.to('cpu'))
+            fig.save(f"results/{str(index).zfill(6)}-melanin.png")
+
+            index += 1
+
 
 totalParams = 0
 

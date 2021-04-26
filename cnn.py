@@ -608,9 +608,9 @@ for epoch in range(num_epochs):
         prefix = ''
         if phase == 'val':
             prefix = 'val_'
-            if (loss.item()) < smallestLoss:
+            if (train_loss.item()) < smallestLoss:
                 torch.save(model.state_dict(), 'working/model.pth')
-                smallestLoss = loss.item()
+                smallestLoss = train_loss.item()
 
         logs[prefix + 'loss'] = train_loss.item()/(batch_idx)
         logs[prefix + 'appearance loss'] = appearance_train_loss.item() / \
@@ -661,7 +661,7 @@ for epoch in range(num_epochs):
 
         plt.figure()
         plt.imshow(spec)
-        fig.savefig(f'training/epoch-{epoch}-specular.png')
+        fig.savefig(f'training/epoch-{epochString}-specular.png')
 
         plt.figure()
         plt.imshow(blood[0][0].to('cpu'), cmap='gray')
