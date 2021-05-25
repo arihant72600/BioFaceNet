@@ -156,7 +156,7 @@ for epoch in range(num_epochs):
 
         inputData = torch.reshape(subset_val[randIndex][0], (1, 3, 64, 64))
 
-        rgb, shade, spec, blood, mel, b = decoder(encoder(inputData))
+        rgb, shade, spec, blood, mel, b = decoder(*encoder(inputData))
         originalImage = torch.clone(inputData[0]).to('cpu')
         originalImage[0] += 0.35064762
         originalImage[1] += 0.21667774
