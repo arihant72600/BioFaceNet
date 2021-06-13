@@ -63,3 +63,36 @@ Melanin
 More results provided in results folder.
 
 This is a set of training + validation data.
+
+## Video-Results
+
+The file video_prediction.py runs the model on a sample video and
+outputs to video-results
+
+Original
+
+![original](video-results/000000-original.png)
+
+Reconstruction
+
+![prediction](video-results/000000-reconstruction.png)
+
+Shading
+
+![prediction](video-results/000000-shading.png)
+
+Specular
+
+![prediction](video-results/000000-specularities.png)
+
+Blood
+
+![prediction](video-results/000000-blood.png)
+
+Melanin
+
+![prediction](video-results/000000-melanin.png)
+
+More results provided in results folder.
+
+This is a set of training + validation data.
