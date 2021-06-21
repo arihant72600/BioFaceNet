@@ -139,9 +139,9 @@ for epoch in range(num_epochs):
         prefix = ''
         if phase == 'val':
             prefix = 'val_'
-            if train_loss.item() < smallestLoss:
+            if appearance_train_loss.item() < smallestLoss:
                 torch.save(encoder.state_dict(), 'working/model.pth')
-                smallestLoss = train_loss.item()
+                smallestLoss = appearance_train_loss.item()
 
         logs[prefix + 'loss'] = train_loss.item()/(batch_idx)
         logs[prefix + 'appearance loss'] = appearance_train_loss.item() / \

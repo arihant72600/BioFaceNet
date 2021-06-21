@@ -109,15 +109,15 @@ class Decoder:
         mel, blood, shade, spec = features
 
         ########### Scaling ###########
-
-        # possibly exclude colortemp out of softmax
-        lighting_parameters = F.softmax(lighting_parameters, 1)
-        weightA = lighting_parameters[:, 0]
+        
+        lighting_weights = lighting_parameters[:, :14]
+        lighting_weights = F.softmax(lighting_weights, 1)
+        weightA = lighting_weights[:, 0]
         weightA = torch.reshape(weightA, (-1, 1))
-        weightD = lighting_parameters[:, 1]
+        weightD = lighting_weights[:, 1]
         weightD = torch.reshape(weightD, (-1, 1))
-        fWeights = lighting_parameters[:, 2:14]
-        colorTemp = lighting_parameters[:, 14]
+        fWeights = lighting_weights[:, 2:14]
+        colorTemp = lighting_weights[:, 14]
         colorTemp = torch.reshape(colorTemp, (-1, 1))
 
         b = 6 * torch.sigmoid(b) - 3
