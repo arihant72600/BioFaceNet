@@ -117,7 +117,7 @@ class Decoder:
         weightD = lighting_weights[:, 1]
         weightD = torch.reshape(weightD, (-1, 1))
         fWeights = lighting_weights[:, 2:14]
-        colorTemp = lighting_parameters[:, 14]
+        colorTemp = torch.sigmoid(lighting_parameters[:, 14])
         colorTemp = torch.reshape(colorTemp, (-1, 1))
 
         b = 6 * torch.sigmoid(b) - 3
