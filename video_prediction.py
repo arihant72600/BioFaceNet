@@ -19,7 +19,16 @@ parser = argparse.ArgumentParser()
 parser.add_argument("--weights", help="Path to weights")
 parser.add_argument("--cuda", help="Use cuda for acceleration",
                     action="store_true")
+parser.add_argument('--left_pad')
+parser.add_argument('--right-pad')
+parser.add_argument('--size')
+
 args = parser.parse_args()
+
+
+l = args.left_pad
+r = args.right_pad
+s = args.size
 
 SAVED_WEIGHTS = args.weights
 
@@ -28,10 +37,12 @@ device = 'cuda' if args.cuda else 'cpu'
 
 images = []
 
+
 def toLinearSpace(image):
     image = np.power(((image + 0.055) / (1.055)), 2.4)
-        
+
     return image
+
 
 meanPixel = np.array([0.35064762, 0.21667774, 0.16786481])
 
@@ -45,7 +56,7 @@ while(cap.isOpened()):
     if (ret != True):
         break
     if (frameId % math.floor(frameRate) == 0):
-        frame = frame[30:2300, 100:300, :]
+        frame = frame[l:l+s, r:r+s, :]
         frame = cv2.resize(frame, (64, 64))
         frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
         frame = np.transpose(frame, (2, 0, 1))
@@ -65,9 +76,6 @@ def gammaCorrection(x):
     x = (x ** (1/2.4) * (1.055)) - 0.055
 
     return x
-
-
-
 
 
 print('Finished loading data')
@@ -121,7 +129,8 @@ for inputs in dataloaders['val']:
 
             fig = plt.figure()
             plt.imshow(npimage)
-            fig.savefig(f"video-results/{str(index).zfill(6)}-reconstruction.png")
+            fig.savefig(
+                f"video-results/{str(index).zfill(6)}-reconstruction.png")
 
             fig = plt.figure()
             plt.imshow(nptruth)
@@ -133,7 +142,8 @@ for inputs in dataloaders['val']:
 
             fig = plt.figure()
             plt.imshow(spec)
-            fig.savefig(f"video-results/{str(index).zfill(6)}-specularities.png")
+            fig.savefig(
+                f"video-results/{str(index).zfill(6)}-specularities.png")
 
             fig = plt.figure()
             plt.imshow(blood[0].to('cpu'))
