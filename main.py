@@ -141,6 +141,7 @@ for epoch in range(num_epochs):
             prefix = 'val_'
             if appearance_train_loss.item() < smallestLoss:
                 torch.save(encoder.state_dict(), 'working/model.pth')
+                print('Saving')
                 smallestLoss = appearance_train_loss.item()
 
         logs[prefix + 'loss'] = train_loss.item()/(batch_idx)
