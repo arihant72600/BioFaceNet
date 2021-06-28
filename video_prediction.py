@@ -26,9 +26,9 @@ parser.add_argument('--size')
 args = parser.parse_args()
 
 
-l = args.left_pad
-r = args.right_pad
-s = args.size
+l = int(args.left_pad)
+r = int(args.right_pad)
+s = int(args.size)
 
 SAVED_WEIGHTS = args.weights
 
