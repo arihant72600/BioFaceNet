@@ -106,6 +106,8 @@ for inputs in dataloaders['val']:
 
     image = inputs
 
+    encoder.eval()
+
     with torch.set_grad_enabled(False):
         images, shades, specs, bloods, mels, bs = decoder(*encoder(image))
 
