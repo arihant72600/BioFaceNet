@@ -4,13 +4,13 @@ import torch.nn.functional as F
 
 channels = [3, 32, 64, 128, 256, 512]
 
+
 class Unet(nn.Module):
-    def __init__(self, n_components = 2, lightVectorSize=15):
+    def __init__(self, n_components=2, lightVectorSize=15, size=64):
         super(Unet, self).__init__()
 
         self.convolutions = nn.ModuleList()
         self.encoderBatchnorms = nn.ModuleList()
-        size = 64
         for i in range(1, len(channels)):
             self.convolutions.append(
                 nn.Conv2d(channels[i - 1], channels[i], 3, padding=1))
@@ -58,7 +58,7 @@ class Unet(nn.Module):
             self.decoderBatchnorms.append(bns)
 
     def forward(self, x):
-        image = x # (B, 3, 64, 64)
+        image = x  # (B, 3, 64, 64)
 
         skipValues = []
 
@@ -106,5 +106,3 @@ class Unet(nn.Module):
             features.append(feature)
 
         return lighting, features
-
-        

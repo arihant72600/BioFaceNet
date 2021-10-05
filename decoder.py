@@ -20,8 +20,9 @@ s2 = torch.Tensor([-1.1, -0.5, -0.7, -1.2, -2.6, -2.9, -2.8, -2.6, -2.6, -1.8, -
 
 
 class Decoder:
-    def __init__(self, device, n_components=2, lightVectorSize=15):
+    def __init__(self, device, n_components=2, lightVectorSize=15, size=64):
         self.lightVectorSize = lightVectorSize
+        self.size = size
 
         illA = sio.loadmat("util/illumA.mat")
         illA = illA['illumA'][0][0]
@@ -160,7 +161,7 @@ class Decoder:
         r_total = F.grid_sample(skinColorGrid, bioPhysicalLayer)
 
         spectra = r_total * torch.reshape(e, (-1, 33, 1, 1))
-        spectra = torch.reshape(spectra, (-1, 1, 33, 64, 64))
+        spectra = torch.reshape(spectra, (-1, 1, 33, self.size, self.size))
         S = torch.reshape(S, (-1, 3, 33, 1, 1))
 
         diffuse = torch.sum(spectra * S, 2)
@@ -185,9 +186,9 @@ class Decoder:
         iz = ts[:, 2, :, :] * wb[:, 0, :, :] + ts[:, 5, :, :] * \
             wb[:, 1, :, :] + ts[:, 8, :, :] * wb[:, 2, :, :]
 
-        ix = torch.reshape(ix, (-1, 1, 64, 64))
-        iy = torch.reshape(iy, (-1, 1, 64, 64))
-        iz = torch.reshape(iz, (-1, 1, 64, 64))
+        ix = torch.reshape(ix, (-1, 1, self.size, self.size))
+        iy = torch.reshape(iy, (-1, 1, self.size, self.size))
+        iz = torch.reshape(iz, (-1, 1, self.size, self.size))
 
         xyz = torch.cat((ix, iy, iz), 1)
 
@@ -197,6 +198,6 @@ class Decoder:
 
         rgb = F.relu(rgb)
 
-        shade = torch.reshape(shade, (-1, 64, 64))
+        shade = torch.reshape(shade, (-1, self.size, self.size))
 
         return rgb, shade, spec, blood, mel, b

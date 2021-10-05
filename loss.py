@@ -2,11 +2,12 @@ import torch
 
 
 class Loss:
-    def __init__(self, priorWeight, appearanceWeight, shadingWeight, sparsityWeight):
+    def __init__(self, priorWeight, appearanceWeight, shadingWeight, sparsityWeight, size=64):
         self.priorWeight = priorWeight
         self.appearanceWeight = appearanceWeight
         self.shadingWeight = shadingWeight
         self.sparsityWeight = sparsityWeight
+        self.size = size
 
     def __call__(self, rgb, shade, spec, b, shading, mask, x):
         scale = torch.sum(shade * shading * mask, (1, 2)) / \
@@ -23,9 +24,9 @@ class Loss:
         originalImage[:, 2, :, :] += 0.16786481
 
         delta = ((originalImage - rgb) ** 2) * \
-            torch.reshape(mask, (-1, 1, 64, 64))
+            torch.reshape(mask, (-1, 1, self.size, self.size))
         appearanceLoss = torch.sum(
-            delta ** 2 / (64 * 64)) * 255 * 255 * self.appearanceWeight / x.shape[0]
+            delta ** 2 / (self.size * self.size)) * 255 * 255 * self.appearanceWeight / x.shape[0]
         # Matlab implementation has image in (0 - 255) so we scale appropriately
 
         shadingLoss = torch.sum(alpha ** 2) * self.shadingWeight / x.shape[0]
